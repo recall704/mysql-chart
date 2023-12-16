@@ -25,6 +25,11 @@ MySQL 在启动初始化时会判断目录是否为空，所以选择 NFS 时一
 ```bash
 helm template mysql-01 . -n app > aio.yaml
 kubectl apply -f aio.yaml
+
+helm template mysql-with-pvc . -n app --set persistence.type=existingClaim > examples/mysql-with-pvc.yaml
+helm template mysql-with-new-pvc . -n app --set persistence.type=newClaim > examples/mysql-with-new-pvc.yaml
+helm template mysql-with-nfs . -n app --set persistence.type=nfs > examples/mysql-with-nfs.yaml
+helm template mysql-without-metrics . -n app --set persistence.type=newClaim --set exporter.enabled=false > examples/mysql-without-metrics.yaml
 ```
 
 或者
@@ -63,3 +68,4 @@ serviceMonitor/app/sm-mysql-nfs-metrics/0 (1 / 5 active targets)
 在 grafana 中新建一个 Dashboard，我这里使用的是 https://grafana.com/grafana/dashboards/7362-mysql-overview/
 也可以使用文件夹 grafana 目录的文件内容来创建。
 
+![mysql](./images/grafana-mysql.png)

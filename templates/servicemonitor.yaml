@@ -1,0 +1,27 @@
+{{- if .Values.exporter.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    k8s.kuboard.cn/name: {{ .Release.Name }}-metrics
+  name: sm-{{ .Release.Name }}-metrics
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - interval: 15s
+      path: /metrics
+      # Name of the Service port which this endpoint refers to
+      port: mysql-metrics
+  # add job label to all metrics, value from svc label k8s.kuboard.cn/name
+  jobLabel: k8s.kuboard.cn/name
+  namespaceSelector:
+    # Endpoints namespace
+    matchNames:
+      - app
+  # Endpoints selector
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/name: {{ .Release.Name }}-metrics
+{{ end }}

@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/name: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/name: "{{ .Release.Name }}"
+        {{- range $key, $val := .Values.podLabels }}
+        {{ $key }}: {{ $val | quote }}
+        {{- end}}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+    spec:
+      affinity: {{ toYaml .Values.affinity | nindent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | nindent 8 }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      containers:
+        - name: mysql
+          image: "{{ .Values.mysql.image }}"
+          imagePullPolicy: {{ .Values.mysql.imagePullPolicy }}
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-{{ .Release.Name }}
+                  key: mysql-root-password
+          ports:
+            - containerPort: 3306
+          resources:
+            {{- toYaml .Values.mysql.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+              {{- if eq .Values.persistence.type "nfs" }}
+              subPath: {{ .Values.persistence.subPath }}
+              {{- end }}
+            - name: config
+              mountPath: /etc/mysql/conf.d
+        {{- if .Values.exporter.enabled }}
+        - name: exporter
+          image: "{{ .Values.exporter.image }}"
+          imagePullPolicy: {{ .Values.exporter.pullPolicy }}
+          env:
+            - name: TZ
+              value: Asia/Shanghai
+            - name: MYSQLD_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secret-{{ .Release.Name }}
+                  key: mysql-root-password
+          command:
+            - /bin/mysqld_exporter
+            - '--mysqld.address=localhost:3306'
+            - '--mysqld.username=root'
+          ports:
+            - name: metrics
+              containerPort: 9104
+          resources:
+            {{- toYaml .Values.exporter.resources | nindent 12 }}
+        {{- end }}
+      volumes:
+        {{- if eq .Values.persistence.type "existingClaim" }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim.name }}
+        {{- else if eq .Values.persistence.type "newClaim" }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-{{ .Release.Name }}
+        {{- else if eq .Values.persistence.type "emptyDir" }}
+        - name: data
+          emptyDir: {}
+        {{- else if eq .Values.persistence.type "nfs" }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-nfs-{{ .Release.Name }}
+        {{- end }}
+        - name: config
+          configMap:
+            defaultMode: 420
+            name: cm-{{ .Release.Name }}

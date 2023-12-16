@@ -1,0 +1,10 @@
+
+1. Access in cluster:
+    mysql -h {{ .Release.Name }}.{{ .Release.Namespace }}.svc -uroot -p{{ .Values.mysql.rootPassword }}
+
+2. if NodePort is configured:
+    {{- if eq .Values.service.type "NodePort" }}
+    export NODE_PORT=$(kubectl get -n {{ .Release.Namespace }} svc {{ .Release.Name }} -o jsonpath="{.spec.ports[0].nodePort}")
+    export NODE_IP=$(kubectl get node -o jsonpath="{.items[0].status.addresses[0].address}")
+    mysql -h ${NODE_IP} -P ${NODE_PORT} -uroot -p{{ .Values.mysql.rootPassword }}
+    {{- end }}

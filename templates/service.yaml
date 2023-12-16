@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+      protocol: TCP
+      {{- if and (eq .Values.service.type "NodePort") (gt (int (toString .Values.service.nodePort)) 0) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+  selector:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+
+{{ if .Values.exporter.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-metrics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s.kuboard.cn/name: {{ .Release.Name }}-metrics
+spec:
+  type: ClusterIP
+  ports:
+    - name: mysql-metrics
+      port: 9104
+      targetPort: 9104
+      protocol: TCP
+  selector:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+{{ end }}

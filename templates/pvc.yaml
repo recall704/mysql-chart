@@ -1,0 +1,59 @@
+{{- if and .Values.persistence.enabled (eq .Values.persistence.type "newClaim") }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+spec:
+  accessModes:
+    {{- toYaml .Values.persistence.newClaim.accessModes | nindent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.newClaim.size }}
+  storageClassName: {{ .Values.persistence.newClaim.storageClassName }}
+{{- end }}
+
+
+{{- if and .Values.persistence.enabled (eq .Values.persistence.type "nfs") }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-nfs-{{ .Release.Name }}
+  labels:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - nolock
+    - hard
+    - rw
+    - proto=tcp
+    - mountvers=3
+    - nfsvers=3
+  nfs:
+    server: {{ .Values.persistence.nfs.server }}
+    path: {{ .Values.persistence.nfs.path }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-nfs-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    k8s.kuboard.cn/name: {{ .Release.Name }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ""
+  volumeName: pv-nfs-{{ .Release.Name }}
+{{- end }}

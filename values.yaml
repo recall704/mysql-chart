@@ -1,0 +1,62 @@
+# Default values for mysql.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+mysql:
+  image: mysql:5.7.44
+  imagePullPolicy: IfNotPresent
+  # openssl rand -base64 24 | head -c 16; echo
+  rootPassword: "Baymax@2020"
+  # mysql binlog server-id
+  serverId: 127
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 2048Mi
+      cpu: 1
+
+service:
+  type: NodePort # ClusterIP | NodePort
+  port: 3306
+  # nodePort: 31306
+
+persistence:
+  enabled: true
+  type: newClaim # existingClaim | newClaim | nfs | emptyDir
+  existingClaim:
+    name: mysql-pvc
+  newClaim:
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    storageClassName: "nfs3"
+  nfs:
+    server: "10.10.10.10"
+    path: "/mnt/data/nfs"
+  subPath: "mysql-nfs"
+
+exporter:
+  enabled: true
+  image: prom/mysqld-exporter:v0.15.1
+  pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+
+# extras config
+podAnnotations: {}
+
+podLabels: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

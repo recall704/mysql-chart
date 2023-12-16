@@ -17,7 +17,7 @@ docker push ${HARBOR}/mysqld-exporter:v0.15.1
 ## 二、存储选择
 修改 values.yaml 中 persistence，根据你的存储类型，填写对应类型的参数
 
-MySQL 在启动初始化时会判断目录是否为空，所有选择 NFS 时一般需要设置 subpath
+MySQL 在启动初始化时会判断目录是否为空，所以选择 NFS 时一般需要设置 subpath
 
 ## 三、使用方法
 根据需要修改 values.yaml 中变量的值
@@ -50,7 +50,7 @@ curl http://{{ .Release.Name }}-metrics.{{ .Release.Namespace }}:9104/metrics
 ```
 
 ### 2. 指标上报
-这里通过创建 Prometheus 的 ServiceMonitor 资源对象来实现的，需要先安装 [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)
+这里通过创建 Prometheus 的 ServiceMonitor 资源对象来实现的，需要先安装 [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)，
 Prometheus 会根据 ServiceMonitor 抓取对应的指标内容。
 
 可以打开 Prometheus 的管理页面，在 `Service Discovery` 页面中检查是否存在我们添加的 serviceMonitor，比如
